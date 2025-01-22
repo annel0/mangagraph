@@ -5,7 +5,7 @@ import logging
 from .parser import Mangagraph
 from .exceptions import MangagraphError
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(description="Mangagraph")
     parser.add_argument('url', type=str, help='URL of the manga to process')
     parser.add_argument('--db', type=str, default='manga.db', help='Database file name')
@@ -25,10 +25,10 @@ def main():
 
     try:
         parser_instance = Mangagraph(
-            db_path=args.db,
+            db_name=args.db,
             use_mirror=args.mirror
         )
-        toc_url, mirror_toc_url = asyncio.run(parser_instance.process_manga(args.url))
+        toc_url, mirror_toc_url = await parser_instance.process_manga(args.url)
         logger.info(f"База данных создана!")
         logger.info(f"Оглавление: {toc_url}")
         logger.info(f"Зеркало оглавления: {mirror_toc_url}")
@@ -37,5 +37,4 @@ def main():
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
 
-if __name__ == "__main__":
-    main()
+asyncio.run(main())

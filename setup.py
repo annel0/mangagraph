@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 LIB_NAME = 'mangagraph'
 
-VERSION = '0.0.2'
+VERSION = '0.0.2.post2'
 
 setup(
     name=LIB_NAME,
@@ -19,11 +19,6 @@ setup(
         'telegraph',
         'asyncio'
     ],
-    entry_points={
-        'console_scripts': [
-            F'{LIB_NAME} = {LIB_NAME}.cli:main'
-        ]
-    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'Operating System :: OS Independent',
