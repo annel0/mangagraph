@@ -30,7 +30,7 @@ class TocURL(Base):
 
     def __repr__(self):
         return (
-            f"<ToC_url(url={self.url}, 
-            mirror_url={self.mirror_url}, 
-            manga_name={self.manga_name})>"
+            f"<ToC_url(url={self.url}, "
+            f"mirror_url={self.mirror_url}, "
+            f"manga_name={self.manga_name})>"
         )
