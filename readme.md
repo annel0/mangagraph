@@ -21,7 +21,7 @@ _если главная ссылка не доступна)_ -> получае�
 #### CLI
 
 ```bash
-mangagraph https://mangalib.me/ru/manga/706--onepunchman?section=chapters&ui=7011590 --db onepunchman.db --mirror --log manga_parser.log
+mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --mirror
 ```
 
 #### Raw

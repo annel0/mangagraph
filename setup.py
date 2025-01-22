@@ -1,14 +1,13 @@
 from setuptools import setup, find_packages
 
-import pathlib
 
 LIB_NAME = 'mangagraph'
 
-__version__ = '0.0.1'
+VERSION = '0.0.2'
 
 setup(
-    name='mangagraph',
-    version=__version__,
+    name=LIB_NAME,
+    version=VERSION,
     description='Async manga parser-converter from mangalib to telegraph pages',
     url='https://github.com/damirTAG/mangagraph',
     author='damirTAG',
@@ -22,7 +21,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mangagraph= mangagraph.cli:main'
+            F'{LIB_NAME} = {LIB_NAME}.cli:main'
         ]
     },
     classifiers=[
