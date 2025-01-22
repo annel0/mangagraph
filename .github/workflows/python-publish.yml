@@ -28,7 +28,7 @@ jobs:
                   echo "    pypi" >> ~/.pypirc
                   echo "[pypi]" >> ~/.pypirc
                   echo "username = __token__" >> ~/.pypirc
-                  echo "password = ${{ secrets.PYPI_API_TOKEN }}" >> ~/.pypirc
+                  echo "password = ${{ secrets.PYPI_PASSWORD }}" >> ~/.pypirc
 
             - name: Build package
               run: python -m build
