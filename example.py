@@ -1,7 +1,7 @@
-from mangagraph.parser import Mangagraph
+from mangagraph import Mangagraph
 from mangagraph.exceptions import MangagraphError
 
-async def run_parser():
+async def main():
     try:
         parser = Mangagraph(db_name='ванпанчмен', use_mirror=True)
         toc_url, mirror_toc_url = await parser.process_manga('https://mangalib.me/ru/manga/706--onepunchman?section=chapters&ui=7011590')
@@ -14,6 +14,6 @@ async def run_parser():
 import asyncio
 
 try:
-    asyncio.run(run_parser())
+    asyncio.run(main())
 except (KeyboardInterrupt, SystemExit):
     print('Sayonara!')

@@ -323,9 +323,9 @@ class Mangagraph:
                         remaining = self.total_chapters - self.processed_count
                         est_time = estimate_remaining_time(remaining)
                         self.logger.info(
-                            f"Processed chapter: {title} " 
+                            f"Обработана глава: {title} " 
                             f"[{self.processed_count}/{self.total_chapters}] " 
-                            f"Remaining time: {est_time}"
+                            f"Осталось: {est_time}"
                         )
                         
                         await asyncio.sleep(5)

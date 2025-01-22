@@ -16,6 +16,12 @@ _если главная ссылка не доступна)_ -> получае�
 получаем базу данных готовую к любому использованию и конечную ссылку телеграфа с зеркалом (оглавление) внутри
 которой находятся все главы с именами и ссылкой для чтения
 
+## Установка
+
+```bash
+pip install -U mangagraph
+```
+
 ## Использование
 
 #### CLI
@@ -27,7 +33,7 @@ mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --m
 #### Raw
 
 ```py
-from mangagraph.parser import Mangagraph
+from mangagraph import Mangagraph
 from mangagraph.exceptions import MangagraphError
 
 async def main():
