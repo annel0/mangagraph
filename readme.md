@@ -30,6 +30,12 @@ pip install -U mangagraph
 mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --mirror
 ```
 
+или
+
+```bash
+python -m mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --mirror
+```
+
 #### Raw
 
 ```py
