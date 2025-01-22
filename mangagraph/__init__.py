@@ -1,5 +1,5 @@
 from .parser import Mangagraph
-from .models import Chapter
+from .models import Chapter, TocURL
 from .exceptions import (
     MangagraphError,
     InvalidURLException,
@@ -9,6 +9,7 @@ from .exceptions import (
 __all__ = [
     'Mangagraph',
     'Chapter',
+    'TocURL',
     'MangagraphError',
     'InvalidURLException',
     'RequestFailedException'

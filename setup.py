@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 LIB_NAME = 'mangagraph'
 
-VERSION = '0.0.2.post2'
+VERSION = '0.0.2.post3'
 
 setup(
     name=LIB_NAME,
