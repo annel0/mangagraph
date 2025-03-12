@@ -19,6 +19,7 @@ setup(
     author='damirTAG',
     author_email='damirtagilbayev17@gmail.com',
     packages=find_packages(),
+    package_data={"": ["readme.md"]},
     install_requires=[
         'aiohttp',
         'sqlalchemy',
@@ -36,5 +37,5 @@ setup(
         'telegraph'
     ],
     python_requires='>=3.7',
-    include_package_data=False
+    include_package_data=True
 )
