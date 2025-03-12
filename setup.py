@@ -13,7 +13,7 @@ setup(
     name=LIB_NAME,
     version=VERSION,
     description='Async manga parser-converter from mangalib to telegraph pages',
-    long_description = (WORK_DIR / "README.md").read_text("utf-8"),
+    long_description = (WORK_DIR / "readme.md").read_text("utf-8"),
     long_description_content_type='text/markdown',
     url='https://github.com/damirTAG/mangagraph',
     author='damirTAG',
