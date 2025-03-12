@@ -29,64 +29,51 @@ import asyncio
 import aiohttp
 import logging
 
-from typing import List, Dict, Any, Tuple
+from typing         import List, Dict, Any, Tuple
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy     import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
-from .models import Base, Chapter, TocURL
-from .exceptions import (
+from .models        import Base, Chapter, TocURL
+from .schemas       import SearchData
+from .exceptions    import (
     MangagraphError,
     RequestFailedException
 )
-from .utils import (
+from .utils         import (
     MangaLibUrl, 
     estimate_remaining_time, 
-    extract_slug
+    extract_slug,
+    sanitize_db_name
+)
+from .constants import (
+    TELEGRAPH_CREDS,
+    MAX_CONCURRENT,
+    API_BASE_URL,
+    BASE_IMG_URL,
+    HEADERS
 )
 
 from telegraph.aio import Telegraph
 from telegraph.exceptions import RetryAfterError
 
-class Mangagraph:
+class Mangagraph():
     """
     Автор: https://github.com/damirtag
 
     Параметры:
-        db_name (str): Имя базы данных в которой будет хранится Том, глава, название главы, ссылка на телеграф, зеркало, дата создания
-        use_mirror (bool): Использовать зеркало как base url для telegraph, по дефолту False
+        use_mirror (bool): Использовать зеркало как base url (graph.org) для telegraph, по дефолту False
     """
-    MAX_CONCURRENT = 3
-    # В 1 мин обрабатывается 12 глав 
-    # что = 20 страницам телеграф в секунду
-    # При учете того что запросы делаются каждые 3 сек
-    CHAPTERS_PER_MINUTE = 20
+    def __init__(self):
+        self.logger     = self._setup_logger()
+        self.telegraph  = Telegraph()
+        self.semaphore  = asyncio.Semaphore(MAX_CONCURRENT)
 
+        self.processed_count    = 0
+        self.total_chapters     = 0
+        self.flood_wait_count   = 0
 
-    def __init__(
-        self, 
-        db_name: str = 'manga.db',
-        use_mirror: bool = False
-    ):
-        self.db_name = db_name if db_name.endswith('.db') else db_name + '.db'
-        self.logger = self._setup_logger()
-        self.engine = create_engine(f'sqlite:///{self.db_name}')
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-
-        self.domain = 'telegra.ph' if not use_mirror else 'graph.org'
-        self.telegraph = Telegraph(domain=self.domain)
-        
-        self.base_img_url = "https://img33.imgslib.link"
-        self.semaphore = asyncio.Semaphore(self.MAX_CONCURRENT)
-
-        self.processed_count = 0
-        self.total_chapters = 0
-        self.flood_wait_count = 0
-
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        self.headers = HEADERS
 
     def _setup_logger(self):
         logger = logging.getLogger('mangagraph')
@@ -98,7 +85,24 @@ class Mangagraph:
         logger.setLevel(logging.INFO)
         return logger
 
-    async def _make_request(self, session: aiohttp.ClientSession, url: str, params: Dict = None) -> Dict:
+    def _setup_db(self, db_name: str) -> Session:
+        try:
+            db_name = sanitize_db_name(db_name)
+            self.logger.info(f'Имя БД: {db_name}')
+
+            engine = create_engine(f'sqlite:///{db_name}')
+            Base.metadata.create_all(engine)
+
+            SessionLocal = sessionmaker(bind=engine)
+
+            return SessionLocal()
+        except Exception as e:
+            self.logger.error(f'Error trying to setup database: {e}')
+            return None
+
+    async def _make_request(
+            self, session: aiohttp.ClientSession, url: str, params: Dict = None
+        ) -> Dict:
         async with self.semaphore:
             for attempt in range(3):
                 try:
@@ -110,17 +114,25 @@ class Mangagraph:
                         raise RequestFailedException(url, str(e))
                     await asyncio.sleep(2 ** attempt)
 
-    async def _get_manga_name(self, session: aiohttp.ClientSession, slug: str) -> str:
-        url = f"https://api2.mangalib.me/api/manga/{slug}"
-        data = await self._make_request(session, url)
-        rus_name = data['data']['rus_name']
-        if rus_name:
-            return rus_name
-        return data['data']['name']
+    async def _get_manga_name(self, session: aiohttp.ClientSession, slug: str) -> tuple[str, str]:
+        url = f"{API_BASE_URL}manga/{slug}"
+        data: dict = await self._make_request(session, url)
+        
+        manga_name = data.get('data', {}).get('rus_name', 1)
+        if manga_name == 1:
+            manga_name = data.get('data', {}).get('name', 'Unknown')
+        
+        return manga_name
 
     async def get_chapters_info(self, session: aiohttp.ClientSession, slug: str) -> List[Dict[str, Any]]:
-        url = f"https://api2.mangalib.me/api/manga/{slug}/chapters"
+        url = f"{API_BASE_URL}manga/{slug}/chapters"
         data = await self._make_request(session, url)
+
+        if not data or 'data' not in data or not isinstance(data['data'], list):
+            self.logger.error(f"Похоже главы в манге были удалены: {slug}")
+            return []  # Некоторые манги могут быть с пустыми главами 
+            # из за удаления по требованиям copyright
+
         return data['data']
 
     async def get_chapter_pages(
@@ -130,10 +142,39 @@ class Mangagraph:
         volume: int, 
         chapter: int
     ) -> List[str]:
-        url = f"https://api2.mangalib.me/api/manga/{slug}/chapter"
+        url = f"{API_BASE_URL}manga/{slug}/chapter"
         params = {'number': chapter, 'volume': volume}
         data = await self._make_request(session, url, params)
-        return [f"{self.base_img_url}{page['url']}" for page in data['data']['pages']]
+        return [f"{BASE_IMG_URL}{page['url']}" for page in data['data']['pages']]
+
+    async def search_manga(
+            self, query: str, limit: int = 5
+        ) -> SearchData:
+        url = f"{API_BASE_URL}manga"
+        params = {
+            "fields[]": ["rate_avg", "rate", "releaseDate"],
+            "q": query,
+            "site_id[]": [1]
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, headers=self.headers) as response:
+                    response.raise_for_status()
+                    data = await response.json()
+                    
+                    results = []
+                    for manga_data in data.get('data', [])[:limit]:
+                        search_data = SearchData.de_json(manga_data)
+                        results.append(search_data)
+                    
+                    return results
+        except aiohttp.ClientError as e:
+            print(f"Error during search request: {e}")
+            return []
+        except Exception as e:
+            print(f"Unexpected error during search: {e}")
+            return []
 
     async def _create_telegraph_page(
             self, 
@@ -168,9 +209,7 @@ class Mangagraph:
                     
                 await asyncio.sleep(wait_time)
                 await self.telegraph.create_account(
-                    short_name='Damir',
-                    author_name='Auto-Generated by MGLParser',
-                    author_url='https://t.me/damirtag'
+                    **TELEGRAPH_CREDS
                 )
                 continue
             except Exception as e:
@@ -219,10 +258,11 @@ class Mangagraph:
         except Exception as e:
             raise MangagraphError(f'Telegraph says: {str(e)}')
 
-    async def process_manga(self, manga_url: MangaLibUrl):
+    async def process_manga(self, manga_url: MangaLibUrl, db_name: str = None):
         """
         Параметры:
             manga_url (str): URL манги, которую нужно обработать.
+            db_name (str): Название файла базы данных, по дефолту дается по имени манги
 
         Возвращает:
 
@@ -237,19 +277,24 @@ class Mangagraph:
             InvalidURLException: Выбрасывается, если URL манги недействителен.
             RequestFailedException: Выбрасывается, если запрос к API завершается неудачей.
         """
-        db_session = self.Session()
         await self.telegraph.create_account(
-            short_name='Damir',
-            author_name='Создано mangagraph by @damirtag',
-            author_url='https://github.com/damirtag/mangagraph'
+            **TELEGRAPH_CREDS
         )
-
         slug = extract_slug(manga_url)
         
         async with aiohttp.ClientSession() as session:
             try:
-                manga_name = await self._get_manga_name(session, slug)
-                chapters = await self.get_chapters_info(session, slug)
+                manga_name  = await self._get_manga_name(session, slug)
+                chapters    = await self.get_chapters_info(session, slug)
+                if chapters == []:
+                    self.logger.error(f"Похоже главы в манге были удалены: https://mangalib.me/ru/{slug}")
+                    return
+                
+                db_session: Session  = self._setup_db(
+                    manga_name if not db_name else db_name
+                )
+                if db_session is None:
+                    raise RuntimeError("Не удалось создать сессию базы данных.")
                 
                 self.total_chapters = len(chapters)
                 self.processed_count = 0
@@ -349,8 +394,8 @@ class Mangagraph:
                     db_session.commit()
 
                     self.logger.info(f"Создано оглавление: {toc_url}")
-                    self.logger.info(f"Зеркало: {mirror_toc_url}")
                     self.logger.info(f"Всего обработано: {self.processed_count}/{self.total_chapters}")
+                    self.logger.info(f"Зеркало: {mirror_toc_url}")
 
                     return toc_url, mirror_toc_url
 

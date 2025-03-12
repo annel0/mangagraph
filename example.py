@@ -4,7 +4,7 @@ from mangagraph.exceptions import MangagraphError
 async def main():
     try:
         parser = Mangagraph(db_name='ванпанчмен', use_mirror=True)
-        toc_url, mirror_toc_url = await parser.process_manga('https://mangalib.me/ru/manga/706--onepunchman?section=chapters&ui=7011590')
+        toc_url, mirror_toc_url = await parser.process_manga('https://mangalib.me/ru/manga/5477--blue-lock?from=catalog&ui=7011590')
         print(f"Table of Contents: {toc_url}")
         print(f"Mirror: {mirror_toc_url}")
     except MangagraphError as e:

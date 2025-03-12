@@ -31,13 +31,19 @@ pip install -U mangagraph
 #### CLI
 
 ```bash
-mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --mirror
+mangagraph https://mangalib.me/ru/manga/706--onepunchman
 ```
 
 или
 
 ```bash
-python -m mangagraph https://mangalib.me/ru/manga/706--onepunchman --db onepunchman.db --mirror
+python mangagraph https://mangalib.me/ru/manga/706--onepunchman
+```
+
+#### Поиск манги
+
+```bash
+python mangagraph --q "Berserk" --limit 10
 ```
 
 #### Raw
@@ -48,7 +54,7 @@ from mangagraph.exceptions import MangagraphError
 
 async def main():
     try:
-        parser = Mangagraph(db_name='ванпанчмен', use_mirror=True)
+        parser = Mangagraph()
         toc_url, mirror_toc_url = await parser.process_manga('https://mangalib.me/ru/manga/706--onepunchman')
         print(f"Table of Contents: {toc_url}")
         print(f"Mirror: {mirror_toc_url}")

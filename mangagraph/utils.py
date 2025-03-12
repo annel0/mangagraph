@@ -1,7 +1,7 @@
 
-import re
-from urllib.parse import urlparse
-from .exceptions import InvalidURLException
+import re, hashlib
+from urllib.parse   import urlparse
+from .exceptions    import InvalidURLException
 
 
 class MangaLibUrl:
@@ -48,3 +48,13 @@ def extract_slug(url: str) -> str:
     if match:
         return match.group(1)
     raise InvalidURLException(url, "Invalid MangaLib URL format.")
+
+def sanitize_db_name(db_name: str) -> str:
+    clean_name = re.sub(r'[^\w\-.]', '_', db_name)
+    
+    if len(clean_name) < 3 or clean_name == '_' * len(clean_name):
+        hash_suffix = hashlib.md5(db_name.encode()).hexdigest()[:8]
+        safe_name = f"{hash_suffix}.db"
+    else:
+        safe_name = clean_name + '.db'
+    return safe_name
