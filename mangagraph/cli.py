@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse
 import asyncio
 import logging
 
@@ -36,24 +36,15 @@ async def search_manga(query: str, limit: int = 5):
 
 async def main():
     parser = argparse.ArgumentParser(description="Mangagraph - Manga to Telegraph converter")
-    
-    # Create a group for mutually exclusive arguments
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--url', type=str, help='URL манги для обработки')
     group.add_argument('--q', type=str, help='Поиск манги по названию')
-    
-    # Optional arguments
+
     parser.add_argument('--db', type=str, help='Имя БД (по умолчанию - название манги)')
     parser.add_argument('--limit', type=int, default=5, help='Максимальное количество результатов поиска (по умолчанию 5)')
     
     args = parser.parse_args()
-    
-    # Setup logger
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(levelname)s] %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)]
-    )
     logger = logging.getLogger(__name__)
     
     mgraph = Mangagraph()
