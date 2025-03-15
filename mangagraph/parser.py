@@ -386,7 +386,7 @@ class Mangagraph():
                     toc_db = TocURL(
                         manga_name=manga_name,
                         url=toc_url,
-                        mirror_toc_url=mirror_toc_url
+                        mirror_url=mirror_toc_url
                     )
                     db_session.add(toc_db)
                     db_session.commit()
