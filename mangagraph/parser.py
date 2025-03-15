@@ -312,9 +312,7 @@ class Mangagraph():
                     volume = chapter_info.get('volume')
                     chapter_num = chapter_info.get('number')
                     title = (
-                        f"{manga_name} | {chapter_info.get('name')}" 
-                        or 
-                        f"{manga_name} | Том {volume}, Глава {chapter_num}"
+                        f"{manga_name} | {chapter_info.get('name', f'Том {volume}, Глава {chapter_num}')}" 
                     )
 
                     existing_chapter = db_session.query(Chapter).filter_by(
