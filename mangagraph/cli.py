@@ -42,16 +42,15 @@ async def main():
     group.add_argument('--q', type=str, help='Поиск манги по названию')
 
     parser.add_argument('--db', type=str, help='Имя БД (по умолчанию - название манги)')
+    parser.add_argument('--c', type=int, help='Обработка одной конкретной главы (номер главы, если дан, то вернет ссылку, без создания бд и ToC)')
     parser.add_argument('--limit', type=int, default=5, help='Максимальное количество результатов поиска (по умолчанию 5)')
     
     args = parser.parse_args()
     logger = logging.getLogger(__name__)
     
-    mgraph = Mangagraph()
-    
     try:
         if args.q:
-            logger.info(f"Searching for: {args.q}")
+            logger.info(f"Поиск: {args.q}")
             slug = await search_manga(args.q, args.limit)
             
             if not slug:
@@ -62,8 +61,15 @@ async def main():
             manga_url = f"https://mangalib.me/ru/manga/{slug}"
         else:
             manga_url = args.url
-            
-        logger.info(f"Processing manga: {manga_url}")
+
+        if args.c:
+            logger.info(f'Обработка главы номер {args.c} | {manga_url}')
+            url, mirror_url = await mgraph.process_chapter(manga_url, args.c)
+            logger.info(f"Ссылка: {url}")
+            logger.info(f"Зеркало: {mirror_url}")
+            return 
+
+        logger.info(f"Обработка манги: {manga_url}")
         toc_url, mirror_toc_url = await mgraph.process_manga(manga_url, args.db)
         
         logger.info(f"База данных создана!")
@@ -77,4 +83,10 @@ async def main():
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
 
-asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())

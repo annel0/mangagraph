@@ -31,13 +31,21 @@ pip install -U mangagraph
 #### CLI
 
 ```bash
-mangagraph https://mangalib.me/ru/manga/706--onepunchman
+mangagraph --url https://mangalib.me/ru/manga/706--onepunchman
 ```
 
 или
 
 ```bash
-python mangagraph https://mangalib.me/ru/manga/706--onepunchman
+python mangagraph --url https://mangalib.me/ru/manga/706--onepunchman
+```
+
+Обработка одной конкретной главы (к примеру вторая)
+
+> Важно! При обработки одной главы не создается БД и оглавление, возвращается только кортеж из двух строк (главной ссылки и зеркала)
+
+```bash
+python mangagraph --url https://mangalib.me/ru/manga/706--onepunchman --c 2
 ```
 
 #### Поиск манги
@@ -64,6 +72,14 @@ async def main():
             print(f"   Год: {result.release_year} | Тип: {result.type} | Статус: {result.status}")
             print(f"   Ссылка: https://mangalib.me/ru/manga/{result.slug_url}")
             print()
+
+        # Парсинг одной конкретной главы
+        chapter_num = 97
+        url, mirror_url = await mgraph.process_chapter(
+            'https://mangalib.me/ru/manga/7965--chainsaw-man',
+            chapter_num
+        )
+        print(f'Бензочел, глава номер {chapter_num}: {url} | {mirror_url}')
 
         # Парсинг манги и загрузка телеграф
         toc_url, mirror_toc_url = await mgraph.process_manga('https://mangalib.me/ru/manga/706--onepunchman')

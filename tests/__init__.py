@@ -6,8 +6,9 @@ import asyncio
 async def test():
     try:
         parser = Mangagraph()
-        toc_url, mirror_toc_url = await parser.process_manga(
-            'https://mangalib.me/ru/manga/55901--chainsaw-man-2'
+        toc_url, mirror_toc_url = await parser.process_chapter(
+            'https://mangalib.me/ru/manga/7965--chainsaw-man',
+            chapter_num=90
         )
         print(f"Table of Contents: {toc_url}")
         print(f"Mirror: {mirror_toc_url}")

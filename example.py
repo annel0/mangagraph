@@ -14,6 +14,14 @@ async def main():
             print(f"   Ссылка: https://mangalib.me/ru/manga/{result.slug_url}")
             print()
 
+        # Парсинг одной конкретной главы
+        chapter_num = 97
+        url, mirror_url = await mgraph.process_chapter(
+            'https://mangalib.me/ru/manga/7965--chainsaw-man',
+            chapter_num
+        )
+        print(f'Бензочел, глава номер {chapter_num}: {url} | {mirror_url}')
+
         # Парсинг манги и загрузка телеграф
         toc_url, mirror_toc_url = await mgraph.process_manga('https://mangalib.me/ru/manga/706--onepunchman')
 
