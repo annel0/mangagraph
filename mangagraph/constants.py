@@ -2,6 +2,8 @@ MAX_CONCURRENT      = 3
 CHAPTERS_PER_MINUTE = 20
 BASE_IMG_URL        = "https://img2.imglib.info"
 API_BASE_URL        = "https://api2.mangalib.me/api/"
+CDN_API_BASE_URL    = "https://api.cdnlibs.org/api/"
+
 TELEGRAPH_CREDS     = dict(
     short_name  ='Damir',
     author_name ='Создано mangagraph',

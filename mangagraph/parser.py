@@ -35,7 +35,7 @@ from sqlalchemy     import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from .models        import Base, Chapter, TocURL
-from .schemas       import SearchData
+from .schemas       import SearchData, MangaData
 from .exceptions    import (
     MangagraphError,
     RequestFailedException
@@ -50,6 +50,7 @@ from .constants     import (
     TELEGRAPH_CREDS,
     MAX_CONCURRENT,
     API_BASE_URL,
+    CDN_API_BASE_URL,
     BASE_IMG_URL,
     HEADERS
 )
@@ -122,6 +123,26 @@ class Mangagraph():
             manga_name = data.get('data', {}).get('name', 'Unknown')
         
         return manga_name
+    
+    async def get_manga_info(self, slug: str) -> MangaData:
+        url = f"{CDN_API_BASE_URL}manga/{slug}"
+        params = {
+            "fields[]": ["otherNames", "summary", "releaseDate", "type_id", "caution", "views", "rate_avg", "rate", "genres", "tags", "teams", "authors", "publisher", "userRating", "manga_status_id", "chap_count", "status_id", "artists"],
+            "site_id[]": [1]
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, headers=self.headers) as response:
+                        response.raise_for_status()
+                        data_json = await response.json()
+                        data = data_json.get('data', {})
+                        return MangaData.de_json(data)
+        except aiohttp.ClientError as e:
+            print(f"Error during search request: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error during search: {e}")
+            return None
 
     async def get_chapters_info(
             self, session: aiohttp.ClientSession, slug: str, chapter_num: Optional[float] = None
